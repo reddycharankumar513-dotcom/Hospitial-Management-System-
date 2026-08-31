@@ -109,6 +109,7 @@ export default function App() {
 
   return (
     <BrowserRouter>
+      {/* Top Header Role Switcher Bar */}
       <div style={{
         background: 'rgba(15, 23, 42, 0.95)',
         borderBottom: '1px solid var(--border-color)',
@@ -121,7 +122,7 @@ export default function App() {
         top: 0
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <strong style={{ fontSize: '0.8rem', color: '#06b6d4', letterSpacing: '0.5px' }}>DYNAMIC HMS WORKSPACE ({doctors.length} DOCTORS):</strong>
+          <strong style={{ fontSize: '0.8rem', color: '#06b6d4', letterSpacing: '0.5px' }}>DYNAMIC HMS WORKSPACE:</strong>
           <div style={{ display: 'flex', gap: '6px' }}>
             {roles.map(r => (
               <Link
