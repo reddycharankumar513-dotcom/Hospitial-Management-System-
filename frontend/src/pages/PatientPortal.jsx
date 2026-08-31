@@ -75,7 +75,7 @@ export default function PatientPortal({ doctors, appointments, onAddAppointment 
             <p style={{ color: '#94a3b8', fontSize: '0.85rem', marginTop: '4px' }}>Blood Group: O+ | Age: 26 | Emergency Triage Status: <span className="badge badge-success">LOW RISK</span></p>
           </div>
           <button className="btn btn-primary" onClick={() => setIsBookModalOpen(true)}>
-            <Calendar size={18} /> Book New Appointment ({doctors.length} Doctors Available)
+            <Calendar size={18} /> Book New Appointment
           </button>
         </div>
 
@@ -104,7 +104,7 @@ export default function PatientPortal({ doctors, appointments, onAddAppointment 
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
               <HeartPulse color="#06b6d4" size={24} />
               <div>
-                <h3>Smart Doctor Recommendation Engine ({doctors.length} Doctors Registered)</h3>
+                <h3>Smart Doctor Recommendation Engine</h3>
                 <p style={{ fontSize: '0.8rem', color: '#94a3b8' }}>Input symptoms to match with our specialists automatically</p>
               </div>
             </div>
@@ -161,7 +161,7 @@ export default function PatientPortal({ doctors, appointments, onAddAppointment 
       <Modal isOpen={isBookModalOpen} onClose={() => setIsBookModalOpen(false)} title="Book Doctor Consultation">
         <form onSubmit={handleBookSubmit}>
           <div style={{ marginBottom: '14px' }}>
-            <label>Attending Doctor ({doctors.length} Specialist Doctors Available)</label>
+            <label>Attending Doctor</label>
             <select value={selectedDoc} onChange={e => setSelectedDoc(e.target.value)}>
               {doctors.map(d => (
                 <option key={d.id} value={`${d.name} (${d.spec})`}>

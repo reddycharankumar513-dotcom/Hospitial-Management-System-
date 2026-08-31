@@ -34,7 +34,7 @@ export default function AppointmentManagement({ doctors, appointments, onAddAppo
     <div>
       <div style={{ marginBottom: '24px' }}>
         <h1>Enterprise Appointment Management Queue</h1>
-        <p style={{ color: '#94a3b8' }}>Dynamic doctor availability dropdown updated live from Doctor Directory ({doctors.length} Doctors)</p>
+        <p style={{ color: '#94a3b8' }}>Dynamic doctor availability dropdown updated live from Doctor Directory</p>
       </div>
 
       <div className="glass-card">
@@ -58,7 +58,7 @@ export default function AppointmentManagement({ doctors, appointments, onAddAppo
           </div>
 
           <div style={{ marginBottom: '14px' }}>
-            <label>Select Attending Doctor ({doctors.length} Available Doctors)</label>
+            <label>Select Attending Doctor</label>
             <select value={newAppt.doctor} onChange={e => setNewAppt({ ...newAppt, doctor: e.target.value })}>
               {doctors.map(d => (
                 <option key={d.id} value={`${d.name} (${d.spec})`}>
