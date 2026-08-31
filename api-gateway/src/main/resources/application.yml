@@ -1,0 +1,72 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      discovery:
+        locator:
+          enabled: true
+          lower-case-service-id: true
+      corsConfigurations:
+        '[/**]':
+          allowedOrigins: "*"
+          allowedMethods:
+            - GET
+            - POST
+            - PUT
+            - DELETE
+            - OPTIONS
+          allowedHeaders: "*"
+
+      routes:
+        - id: auth-service
+          uri: lb://auth-service
+          predicates:
+            - Path=/api/v1/auth/**, /api/auth/**
+        - id: patient-service
+          uri: lb://patient-service
+          predicates:
+            - Path=/api/v1/patients/**, /api/patients/**
+        - id: doctor-service
+          uri: lb://doctor-service
+          predicates:
+            - Path=/api/v1/doctors/**, /api/doctors/**
+        - id: appointment-service
+          uri: lb://appointment-service
+          predicates:
+            - Path=/api/v1/appointments/**, /api/appointments/**
+        - id: medical-record-service
+          uri: lb://medical-record-service
+          predicates:
+            - Path=/api/v1/medical-records/**, /api/medical-records/**
+        - id: lab-service
+          uri: lb://lab-service
+          predicates:
+            - Path=/api/v1/lab/**, /api/lab/**
+        - id: pharmacy-service
+          uri: lb://pharmacy-service
+          predicates:
+            - Path=/api/v1/pharmacy/**, /api/pharmacy/**
+        - id: billing-service
+          uri: lb://billing-service
+          predicates:
+            - Path=/api/v1/billing/**, /api/billing/**
+        - id: bed-service
+          uri: lb://bed-service
+          predicates:
+            - Path=/api/v1/beds/**, /api/beds/**, /api/v1/admissions/**, /api/admissions/**
+        - id: notification-service
+          uri: lb://notification-service
+          predicates:
+            - Path=/api/v1/notifications/**, /api/notifications/**
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://localhost:8761/eureka/
+
+jwt:
+  secret: 9a4f2c8d7e1b5a3f6c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b

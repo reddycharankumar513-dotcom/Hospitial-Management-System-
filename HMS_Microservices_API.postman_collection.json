@@ -1,0 +1,444 @@
+{
+  "info": {
+    "name": "HMS Microservices Intelligent Platform API",
+    "description": "Complete Postman collection covering all 12 microservice feature modules.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "token",
+      "value": ""
+    },
+    {
+      "key": "patientId",
+      "value": "1"
+    },
+    {
+      "key": "doctorId",
+      "value": "1"
+    },
+    {
+      "key": "appointmentId",
+      "value": "1"
+    },
+    {
+      "key": "labOrderId",
+      "value": "1"
+    },
+    {
+      "key": "prescriptionId",
+      "value": "1"
+    },
+    {
+      "key": "billId",
+      "value": "1"
+    }
+  ],
+  "item": [
+    {
+      "name": "01 Authentication",
+      "item": [
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"admin@hms.com\", \"password\": \"admin123\"}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Register Patient User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"newpatient@hms.com\", \"password\": \"patient123\", \"firstName\": \"John\", \"lastName\": \"Doe\", \"role\": \"PATIENT\"}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "register"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "02 Patients",
+      "item": [
+        {
+          "name": "Get All Patients",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/patients",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "patients"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Patient By ID",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/patients/{{patientId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "patients",
+                "{{patientId}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "03 Doctors",
+      "item": [
+        {
+          "name": "Get All Doctors",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/doctors",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "doctors"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Doctor Available Slots",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/doctors/1/available-slots",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "doctors",
+                "1",
+                "available-slots"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "04 Appointments",
+      "item": [
+        {
+          "name": "Book Appointment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"patientId\": 1, \"doctorId\": 1, \"appointmentDate\": \"2026-09-01\", \"startTime\": \"10:00\", \"reason\": \"Cardiology Consultation\"}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/appointments",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "appointments"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "05 Medical Records",
+      "item": [
+        {
+          "name": "Create Clinical Record",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"patientId\": 1, \"doctorId\": 1, \"appointmentId\": 1, \"symptoms\": \"Chest pain\", \"diagnosisNotes\": \"Mild Hypertension\", \"prescription\": \"Amlodipine 5mg\"}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/medical-records",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "medical-records"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "06 Laboratory",
+      "item": [
+        {
+          "name": "Create Lab Order",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"patientId\": 1, \"doctorId\": 1, \"testName\": \"CBC Test\", \"priority\": \"URGENT\"}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/lab/orders",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "lab",
+                "orders"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "07 Pharmacy",
+      "item": [
+        {
+          "name": "Dispense Medicine",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"prescriptionId\": 1, \"medicineId\": 1, \"quantity\": 1}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/pharmacy/dispense",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "pharmacy",
+                "dispense"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "08 Billing",
+      "item": [
+        {
+          "name": "Create Bill",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"patientId\": 1, \"appointmentId\": 1, \"totalAmount\": 150.0}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/billing/bills",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "billing",
+                "bills"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "09 Beds",
+      "item": [
+        {
+          "name": "Get Available Beds",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/beds/available",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "beds",
+                "available"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "10 Notifications",
+      "item": [
+        {
+          "name": "Get All Notifications",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/notifications",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "notifications"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "11 Smart Recommendation",
+      "item": [
+        {
+          "name": "Recommend Doctor",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"symptoms\": [\"chest pain\", \"palpitations\"]}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/doctors/recommend",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "doctors",
+                "recommend"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "12 Triage",
+      "item": [
+        {
+          "name": "Evaluate Triage Level",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"symptoms\": [\"severe shortness of breath\"], \"spo2\": 88, \"heartRate\": 135}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/patients/triage",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "patients",
+                "triage"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

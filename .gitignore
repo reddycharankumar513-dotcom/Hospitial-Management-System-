@@ -1,0 +1,15 @@
+target/
+*.class
+*.jar
+*.war
+*.ear
+*.log
+.idea/
+*.iml
+.vscode/
+.DS_Store
+
+frontend/node_modules/
+frontend/dist/
+.env
+.env.local
