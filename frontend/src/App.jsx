@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { BrowserRouter, Routes, Route, Navigate, Link, useNavigate } from 'react-router-dom';
-import { HeartPulse, Bell, User, LogOut, Search, ShieldCheck } from 'lucide-react';
+import { BrowserRouter, Routes, Route, Navigate, Link } from 'react-router-dom';
+import { HeartPulse, User, LogOut } from 'lucide-react';
 
 import Login from './pages/Login';
 import PatientPortal from './pages/PatientPortal';
@@ -50,7 +50,6 @@ function TopNavbar({ userRole, userName, onLogout, onRoleChange }) {
       top: 0,
       zIndex: 1000
     }}>
-      {/* Hospital Logo */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
         <Link to="/admin/dashboard" style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none' }}>
           <div style={{ padding: '6px', background: 'rgba(6,182,212,0.15)', borderRadius: '8px', border: '1px solid rgba(6,182,212,0.3)' }}>
@@ -61,7 +60,6 @@ function TopNavbar({ userRole, userName, onLogout, onRoleChange }) {
           </span>
         </Link>
 
-        {/* Clean Role Switcher for Navigating Portals */}
         <div style={{ display: 'flex', gap: '4px', marginLeft: '20px' }}>
           {roles.map(r => (
             <Link
@@ -85,7 +83,6 @@ function TopNavbar({ userRole, userName, onLogout, onRoleChange }) {
         </div>
       </div>
 
-      {/* User Session Profile & Logout */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '4px 12px', background: 'rgba(255,255,255,0.05)', borderRadius: '20px', border: '1px solid var(--border-color)' }}>
           <User size={14} color="#06b6d4" />
@@ -214,46 +211,80 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
+        {/* Default Root Redirects to Login */}
+        <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="/login" element={<Login onLoginSuccess={handleLoginSuccess} />} />
 
-        {/* Portals wrapped in clean Navbar */}
-        <Route path="/*" element={
+        {/* Flat Top-Level Portal Routes */}
+        <Route path="/patient-portal" element={
           <div>
             <TopNavbar userRole={userRole} userName={userName} onLogout={handleLogout} onRoleChange={handleRoleChange} />
-            <Routes>
-              <Route path="/patient-portal" element={<div style={{ padding: '24px 40px' }}><PatientPortal doctors={doctors} appointments={appointments} onAddAppointment={handleAddAppointment} /></div>} />
-              <Route path="/doctor-portal" element={<div style={{ padding: '24px 40px' }}><DoctorPortal /></div>} />
-              <Route path="/lab-portal" element={<div style={{ padding: '24px 40px' }}><LabPortal /></div>} />
-              <Route path="/pharmacy-portal" element={<div style={{ padding: '24px 40px' }}><PharmacyPortal medicines={medicines} onDispenseMedicine={handleDispenseMedicine} /></div>} />
-              <Route path="/billing-portal" element={<div style={{ padding: '24px 40px' }}><BillingPortal /></div>} />
-              <Route path="/bed-portal" element={<div style={{ padding: '24px 40px' }}><BedPortal beds={beds} onAdmitBed={handleAdmitBed} onDischargeBed={handleDischargeBed} /></div>} />
-
-              <Route path="/admin/*" element={
-                <AdminLayout theme={theme} toggleTheme={toggleTheme}>
-                  <Routes>
-                    <Route path="dashboard" element={<AdminDashboard />} />
-                    <Route path="users" element={<UserManagement />} />
-                    <Route path="roles" element={<RoleManagement />} />
-                    <Route path="patients" element={<PatientManagement />} />
-                    <Route path="doctors" element={<DoctorManagement doctors={doctors} onAddDoctor={handleAddDoctor} />} />
-                    <Route path="appointments" element={<AppointmentManagement doctors={doctors} appointments={appointments} onAddAppointment={handleAddAppointment} />} />
-                    <Route path="beds" element={<BedManagement beds={beds} onAdmitBed={handleAdmitBed} onDischargeBed={handleDischargeBed} />} />
-                    <Route path="laboratory" element={<LabManagement />} />
-                    <Route path="pharmacy" element={<PharmacyManagement medicines={medicines} onDispenseMedicine={handleDispenseMedicine} />} />
-                    <Route path="billing" element={<BillingManagement />} />
-                    <Route path="reports" element={<ReportsPage />} />
-                    <Route path="audit-logs" element={<AuditLogsPage />} />
-                    <Route path="settings" element={<SettingsPage />} />
-                    <Route path="profile" element={<AdminProfile />} />
-                    <Route path="*" element={<Navigate to="dashboard" replace />} />
-                  </Routes>
-                </AdminLayout>
-              } />
-
-              <Route path="*" element={<Navigate to="/admin/dashboard" replace />} />
-            </Routes>
+            <div style={{ padding: '24px 40px' }}><PatientPortal doctors={doctors} appointments={appointments} onAddAppointment={handleAddAppointment} /></div>
           </div>
         } />
+
+        <Route path="/doctor-portal" element={
+          <div>
+            <TopNavbar userRole={userRole} userName={userName} onLogout={handleLogout} onRoleChange={handleRoleChange} />
+            <div style={{ padding: '24px 40px' }}><DoctorPortal /></div>
+          </div>
+        } />
+
+        <Route path="/lab-portal" element={
+          <div>
+            <TopNavbar userRole={userRole} userName={userName} onLogout={handleLogout} onRoleChange={handleRoleChange} />
+            <div style={{ padding: '24px 40px' }}><LabPortal /></div>
+          </div>
+        } />
+
+        <Route path="/pharmacy-portal" element={
+          <div>
+            <TopNavbar userRole={userRole} userName={userName} onLogout={handleLogout} onRoleChange={handleRoleChange} />
+            <div style={{ padding: '24px 40px' }}><PharmacyPortal medicines={medicines} onDispenseMedicine={handleDispenseMedicine} /></div>
+          </div>
+        } />
+
+        <Route path="/billing-portal" element={
+          <div>
+            <TopNavbar userRole={userRole} userName={userName} onLogout={handleLogout} onRoleChange={handleRoleChange} />
+            <div style={{ padding: '24px 40px' }}><BillingPortal /></div>
+          </div>
+        } />
+
+        <Route path="/bed-portal" element={
+          <div>
+            <TopNavbar userRole={userRole} userName={userName} onLogout={handleLogout} onRoleChange={handleRoleChange} />
+            <div style={{ padding: '24px 40px' }}><BedPortal beds={beds} onAdmitBed={handleAdmitBed} onDischargeBed={handleDischargeBed} /></div>
+          </div>
+        } />
+
+        {/* Admin Operations Center Routes */}
+        <Route path="/admin/*" element={
+          <div>
+            <TopNavbar userRole={userRole} userName={userName} onLogout={handleLogout} onRoleChange={handleRoleChange} />
+            <AdminLayout theme={theme} toggleTheme={toggleTheme}>
+              <Routes>
+                <Route path="dashboard" element={<AdminDashboard />} />
+                <Route path="users" element={<UserManagement />} />
+                <Route path="roles" element={<RoleManagement />} />
+                <Route path="patients" element={<PatientManagement />} />
+                <Route path="doctors" element={<DoctorManagement doctors={doctors} onAddDoctor={handleAddDoctor} />} />
+                <Route path="appointments" element={<AppointmentManagement doctors={doctors} appointments={appointments} onAddAppointment={handleAddAppointment} />} />
+                <Route path="beds" element={<BedManagement beds={beds} onAdmitBed={handleAdmitBed} onDischargeBed={handleDischargeBed} />} />
+                <Route path="laboratory" element={<LabManagement />} />
+                <Route path="pharmacy" element={<PharmacyManagement medicines={medicines} onDispenseMedicine={handleDispenseMedicine} />} />
+                <Route path="billing" element={<BillingManagement />} />
+                <Route path="reports" element={<ReportsPage />} />
+                <Route path="audit-logs" element={<AuditLogsPage />} />
+                <Route path="settings" element={<SettingsPage />} />
+                <Route path="profile" element={<AdminProfile />} />
+                <Route path="*" element={<Navigate to="dashboard" replace />} />
+              </Routes>
+            </AdminLayout>
+          </div>
+        } />
+
+        <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </BrowserRouter>
   );

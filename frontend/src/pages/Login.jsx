@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { HeartPulse, Eye, EyeOff, Lock, Mail, ShieldCheck, ArrowRight, AlertCircle, CheckCircle, UserCheck } from 'lucide-react';
+import { HeartPulse, Eye, EyeOff, Lock, Mail, ArrowRight, AlertCircle, CheckCircle, UserCheck } from 'lucide-react';
 import Modal from '../components/common/Modal';
 
 export default function Login({ onLoginSuccess }) {
@@ -18,18 +18,18 @@ export default function Login({ onLoginSuccess }) {
 
   const navigate = useNavigate();
 
-  const handleRoleQuickSelect = (r, defaultEmail) => {
-    setRole(r);
+  const handleRoleQuickSelect = (selectedRole, defaultEmail) => {
+    setRole(selectedRole);
     setEmail(defaultEmail);
-    setPassword('password123');
+    setPassword('admin123');
   };
 
   const handleLogin = (e) => {
-    e.preventDefault();
+    if (e) e.preventDefault();
     setErrorMsg('');
 
-    if (!email || !password) {
-      setErrorMsg('Please enter both your email/username and password.');
+    if (!email) {
+      setErrorMsg('Please enter your email or username.');
       return;
     }
 
@@ -38,35 +38,44 @@ export default function Login({ onLoginSuccess }) {
     setTimeout(() => {
       setLoading(false);
 
-      // Determine user details based on selected role or email pattern
       let targetRole = role;
       let userName = 'Hospital User';
+      let targetPath = '/admin/dashboard';
 
-      if (email.includes('admin') || role === 'ADMIN') {
+      const em = email.toLowerCase();
+
+      if (em.includes('admin') || role === 'ADMIN') {
         targetRole = 'ADMIN';
         userName = 'System Administrator';
-      } else if (email.includes('doctor') || role === 'DOCTOR') {
+        targetPath = '/admin/dashboard';
+      } else if (em.includes('doctor') || role === 'DOCTOR') {
         targetRole = 'DOCTOR';
         userName = 'Dr. John Doe (Cardiology)';
-      } else if (email.includes('patient') || role === 'PATIENT') {
+        targetPath = '/doctor-portal';
+      } else if (em.includes('patient') || role === 'PATIENT') {
         targetRole = 'PATIENT';
-        userName = 'Peter Parker';
-      } else if (email.includes('lab') || role === 'LAB_TECHNICIAN') {
+        userName = 'Peter Parker (PAT-1001)';
+        targetPath = '/patient-portal';
+      } else if (em.includes('lab') || role === 'LAB_TECHNICIAN') {
         targetRole = 'LAB_TECHNICIAN';
         userName = 'Alex Mercer (Lab Tech)';
-      } else if (email.includes('pharmacy') || role === 'PHARMACIST') {
+        targetPath = '/lab-portal';
+      } else if (em.includes('pharmacy') || role === 'PHARMACIST') {
         targetRole = 'PHARMACIST';
-        userName = 'Sarah Jenkins (Chief Pharmacist)';
-      } else if (email.includes('billing') || role === 'BILLING_STAFF') {
+        userName = 'Sarah Jenkins (Pharmacist)';
+        targetPath = '/pharmacy-portal';
+      } else if (em.includes('billing') || role === 'BILLING_STAFF') {
         targetRole = 'BILLING_STAFF';
         userName = 'Robert Vance (Billing Officer)';
-      } else if (email.includes('bed') || role === 'BED_MANAGER') {
+        targetPath = '/billing-portal';
+      } else if (em.includes('bed') || role === 'BED_MANAGER') {
         targetRole = 'BED_MANAGER';
         userName = 'Elena Rostova (Ward Manager)';
+        targetPath = '/bed-portal';
       }
 
       const userData = {
-        token: `jwt-${targetRole.toLowerCase()}-token-${Date.now()}`,
+        token: `jwt-${targetRole.toLowerCase()}-token`,
         role: targetRole,
         name: userName,
         email: email
@@ -80,33 +89,8 @@ export default function Login({ onLoginSuccess }) {
         onLoginSuccess(userData);
       }
 
-      // Direct redirection to the exact role portal workspace
-      switch (targetRole) {
-        case 'ADMIN':
-          navigate('/admin/dashboard');
-          break;
-        case 'DOCTOR':
-          navigate('/doctor-portal');
-          break;
-        case 'PATIENT':
-          navigate('/patient-portal');
-          break;
-        case 'LAB_TECHNICIAN':
-          navigate('/lab-portal');
-          break;
-        case 'PHARMACIST':
-          navigate('/pharmacy-portal');
-          break;
-        case 'BILLING_STAFF':
-          navigate('/billing-portal');
-          break;
-        case 'BED_MANAGER':
-          navigate('/bed-portal');
-          break;
-        default:
-          navigate('/admin/dashboard');
-      }
-    }, 600);
+      navigate(targetPath);
+    }, 400);
   };
 
   const handleForgotSubmit = (e) => {
@@ -134,23 +118,22 @@ export default function Login({ onLoginSuccess }) {
             <h1 style={{ fontSize: '1.6rem', fontWeight: 800, color: '#f8fafc', letterSpacing: '-0.5px' }}>
               St. Jude Health System
             </h1>
-            <span style={{ fontSize: '0.85rem', color: '#06b6d4', fontWeight: 600 }}>Integrated Hospital Operations & Care Portal</span>
+            <span style={{ fontSize: '0.85rem', color: '#06b6d4', fontWeight: 600 }}>Integrated Hospital Operations Portal</span>
           </div>
         </div>
 
         <div style={{ margin: 'auto 0' }}>
           <span className="badge badge-info" style={{ marginBottom: '16px', display: 'inline-block' }}>ENTERPRISE HEALTHCARE PLATFORM</span>
           <h2 style={{ fontSize: '2.4rem', lineHeight: 1.25, fontWeight: 700, marginBottom: '20px', color: '#f8fafc' }}>
-            Unified Clinical & Patient Operations Management
+            Unified Clinical & Patient Operations Portal
           </h2>
           <p style={{ color: '#94a3b8', fontSize: '0.95rem', lineHeight: 1.6, maxWidth: '500px' }}>
             Access electronic health records, doctor consultations, laboratory diagnostics, pharmacy inventory, and billing services in one secure portal.
           </p>
 
-          {/* Quick Role Selector Cards for Humanized Testing */}
           <div style={{ marginTop: '32px' }}>
             <span style={{ fontSize: '0.78rem', color: '#64748b', fontWeight: 600, display: 'block', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-              Select Role for Instant Sign In:
+              Click Any Role to Test Sign In:
             </span>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
               {[
@@ -186,7 +169,7 @@ export default function Login({ onLoginSuccess }) {
 
         <div style={{ display: 'flex', justifyContent: 'space-between', color: '#64748b', fontSize: '0.8rem' }}>
           <span>© 2026 St. Jude Medical Center</span>
-          <span>HIPAA & GDPR Compliant Security</span>
+          <span>HIPAA & GDPR Security</span>
         </div>
       </div>
 
@@ -196,7 +179,7 @@ export default function Login({ onLoginSuccess }) {
           <div style={{ marginBottom: '32px' }}>
             <h2 style={{ fontSize: '1.8rem', fontWeight: 700, color: 'var(--text-primary)' }}>Hospital System Sign In</h2>
             <p style={{ color: '#94a3b8', fontSize: '0.9rem', marginTop: '6px' }}>
-              Enter your credentials to access your hospital workspace
+              Select role and click Sign In to enter your hospital workspace
             </p>
           </div>
 
@@ -208,10 +191,20 @@ export default function Login({ onLoginSuccess }) {
 
           <form onSubmit={handleLogin}>
             <div style={{ marginBottom: '18px' }}>
-              <label style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Hospital Role</label>
+              <label style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Hospital Role Workspace</label>
               <select
                 value={role}
-                onChange={(e) => setRole(e.target.value)}
+                onChange={(e) => {
+                  const selectedRole = e.target.value;
+                  setRole(selectedRole);
+                  if (selectedRole === 'ADMIN') setEmail('admin@hms.com');
+                  else if (selectedRole === 'DOCTOR') setEmail('doctor@hms.com');
+                  else if (selectedRole === 'PATIENT') setEmail('patient@hms.com');
+                  else if (selectedRole === 'LAB_TECHNICIAN') setEmail('lab@hms.com');
+                  else if (selectedRole === 'PHARMACIST') setEmail('pharmacy@hms.com');
+                  else if (selectedRole === 'BILLING_STAFF') setEmail('billing@hms.com');
+                  else if (selectedRole === 'BED_MANAGER') setEmail('bed@hms.com');
+                }}
                 style={{ marginTop: '6px' }}
               >
                 <option value="ADMIN">Administrator</option>
@@ -279,7 +272,7 @@ export default function Login({ onLoginSuccess }) {
             </div>
 
             <button type="submit" className="btn btn-primary" style={{ width: '100%', justifyContent: 'center', padding: '12px', fontSize: '0.95rem' }} disabled={loading}>
-              {loading ? 'Verifying Credentials...' : <>Sign In to Hospital Portal <ArrowRight size={18} /></>}
+              {loading ? 'Signing in...' : <>Sign In to Hospital Workspace <ArrowRight size={18} /></>}
             </button>
           </form>
         </div>
