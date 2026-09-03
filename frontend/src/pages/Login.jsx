@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { HeartPulse, Eye, EyeOff, Lock, Mail, ArrowRight, AlertCircle, CheckCircle, UserCheck } from 'lucide-react';
+import { HeartPulse, Eye, EyeOff, Lock, Mail, ArrowRight, AlertCircle, CheckCircle, ShieldCheck, UserCheck } from 'lucide-react';
 import Modal from '../components/common/Modal';
 
 export default function Login({ onLoginSuccess }) {
@@ -9,7 +9,6 @@ export default function Login({ onLoginSuccess }) {
   const [role, setRole] = useState('ADMIN');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
-  const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
   const [showForgotModal, setShowForgotModal] = useState(false);
@@ -18,13 +17,31 @@ export default function Login({ onLoginSuccess }) {
 
   const navigate = useNavigate();
 
-  const handleRoleQuickSelect = (selectedRole, defaultEmail) => {
-    setRole(selectedRole);
-    setEmail(defaultEmail);
-    setPassword('admin123');
+  // Instant login helper for any role
+  const performLogin = (targetRole, userEmail, userName, targetPath) => {
+    const userData = {
+      token: `jwt-${targetRole.toLowerCase()}-token-${Date.now()}`,
+      role: targetRole,
+      name: userName,
+      email: userEmail
+    };
+
+    localStorage.setItem('userToken', userData.token);
+    localStorage.setItem('userRole', userData.role);
+    localStorage.setItem('userName', userData.name);
+
+    if (onLoginSuccess) {
+      onLoginSuccess(userData);
+    }
+
+    navigate(targetPath);
   };
 
-  const handleLogin = (e) => {
+  const handleQuickRoleLogin = (selectedRole, defaultEmail, name, path) => {
+    performLogin(selectedRole, defaultEmail, name, path);
+  };
+
+  const handleLoginSubmit = (e) => {
     if (e) e.preventDefault();
     setErrorMsg('');
 
@@ -33,70 +50,59 @@ export default function Login({ onLoginSuccess }) {
       return;
     }
 
-    setLoading(true);
+    let targetRole = role;
+    let userName = 'Hospital User';
+    let targetPath = '/admin/dashboard';
 
-    setTimeout(() => {
-      setLoading(false);
+    const em = email.toLowerCase();
 
-      let targetRole = role;
-      let userName = 'Hospital User';
-      let targetPath = '/admin/dashboard';
+    if (em.includes('admin') || role === 'ADMIN') {
+      targetRole = 'ADMIN';
+      userName = 'System Administrator';
+      targetPath = '/admin/dashboard';
+    } else if (em.includes('doctor') || role === 'DOCTOR') {
+      targetRole = 'DOCTOR';
+      userName = 'Dr. John Doe (Cardiology)';
+      targetPath = '/doctor-portal';
+    } else if (em.includes('patient') || role === 'PATIENT') {
+      targetRole = 'PATIENT';
+      userName = 'Peter Parker (PAT-1001)';
+      targetPath = '/patient-portal';
+    } else if (em.includes('lab') || role === 'LAB_TECHNICIAN') {
+      targetRole = 'LAB_TECHNICIAN';
+      userName = 'Alex Mercer (Lab Tech)';
+      targetPath = '/lab-portal';
+    } else if (em.includes('pharmacy') || role === 'PHARMACIST') {
+      targetRole = 'PHARMACIST';
+      userName = 'Sarah Jenkins (Pharmacist)';
+      targetPath = '/pharmacy-portal';
+    } else if (em.includes('billing') || role === 'BILLING_STAFF') {
+      targetRole = 'BILLING_STAFF';
+      userName = 'Robert Vance (Billing Officer)';
+      targetPath = '/billing-portal';
+    } else if (em.includes('bed') || role === 'BED_MANAGER') {
+      targetRole = 'BED_MANAGER';
+      userName = 'Elena Rostova (Ward Manager)';
+      targetPath = '/bed-portal';
+    }
 
-      const em = email.toLowerCase();
-
-      if (em.includes('admin') || role === 'ADMIN') {
-        targetRole = 'ADMIN';
-        userName = 'System Administrator';
-        targetPath = '/admin/dashboard';
-      } else if (em.includes('doctor') || role === 'DOCTOR') {
-        targetRole = 'DOCTOR';
-        userName = 'Dr. John Doe (Cardiology)';
-        targetPath = '/doctor-portal';
-      } else if (em.includes('patient') || role === 'PATIENT') {
-        targetRole = 'PATIENT';
-        userName = 'Peter Parker (PAT-1001)';
-        targetPath = '/patient-portal';
-      } else if (em.includes('lab') || role === 'LAB_TECHNICIAN') {
-        targetRole = 'LAB_TECHNICIAN';
-        userName = 'Alex Mercer (Lab Tech)';
-        targetPath = '/lab-portal';
-      } else if (em.includes('pharmacy') || role === 'PHARMACIST') {
-        targetRole = 'PHARMACIST';
-        userName = 'Sarah Jenkins (Pharmacist)';
-        targetPath = '/pharmacy-portal';
-      } else if (em.includes('billing') || role === 'BILLING_STAFF') {
-        targetRole = 'BILLING_STAFF';
-        userName = 'Robert Vance (Billing Officer)';
-        targetPath = '/billing-portal';
-      } else if (em.includes('bed') || role === 'BED_MANAGER') {
-        targetRole = 'BED_MANAGER';
-        userName = 'Elena Rostova (Ward Manager)';
-        targetPath = '/bed-portal';
-      }
-
-      const userData = {
-        token: `jwt-${targetRole.toLowerCase()}-token`,
-        role: targetRole,
-        name: userName,
-        email: email
-      };
-
-      localStorage.setItem('userToken', userData.token);
-      localStorage.setItem('userRole', userData.role);
-      localStorage.setItem('userName', userData.name);
-
-      if (onLoginSuccess) {
-        onLoginSuccess(userData);
-      }
-
-      navigate(targetPath);
-    }, 400);
+    performLogin(targetRole, email, userName, targetPath);
   };
 
   const handleForgotSubmit = (e) => {
     e.preventDefault();
     setForgotSuccess('If your account is registered, a password reset link has been dispatched to your email address.');
   };
+
+  const roleButtons = [
+    { r: 'ADMIN', label: 'Administrator', email: 'admin@hms.com', name: 'System Administrator', path: '/admin/dashboard' },
+    { r: 'DOCTOR', label: 'Doctor 360°', email: 'doctor@hms.com', name: 'Dr. John Doe', path: '/doctor-portal' },
+    { r: 'PATIENT', label: 'Patient Portal', email: 'patient@hms.com', name: 'Peter Parker', path: '/patient-portal' },
+    { r: 'LAB_TECHNICIAN', label: 'Lab Tech', email: 'lab@hms.com', name: 'Alex Mercer', path: '/lab-portal' },
+    { r: 'PHARMACIST', label: 'Pharmacist', email: 'pharmacy@hms.com', name: 'Sarah Jenkins', path: '/pharmacy-portal' },
+    { r: 'BILLING_STAFF', label: 'Billing Officer', email: 'billing@hms.com', name: 'Robert Vance', path: '/billing-portal' },
+    { r: 'BED_MANAGER', label: 'Bed Manager', email: 'bed@hms.com', name: 'Elena Rostova', path: '/bed-portal' }
+  ];
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg-primary)' }}>
@@ -105,7 +111,7 @@ export default function Login({ onLoginSuccess }) {
         flex: 1.1,
         background: 'linear-gradient(135deg, rgba(15,23,42,0.98), rgba(30,41,59,0.95))',
         borderRight: '1px solid var(--border-color)',
-        padding: '60px',
+        padding: '50px',
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'space-between'
@@ -124,43 +130,37 @@ export default function Login({ onLoginSuccess }) {
 
         <div style={{ margin: 'auto 0' }}>
           <span className="badge badge-info" style={{ marginBottom: '16px', display: 'inline-block' }}>ENTERPRISE HEALTHCARE PLATFORM</span>
-          <h2 style={{ fontSize: '2.4rem', lineHeight: 1.25, fontWeight: 700, marginBottom: '20px', color: '#f8fafc' }}>
+          <h2 style={{ fontSize: '2.2rem', lineHeight: 1.25, fontWeight: 700, marginBottom: '16px', color: '#f8fafc' }}>
             Unified Clinical & Patient Operations Portal
           </h2>
-          <p style={{ color: '#94a3b8', fontSize: '0.95rem', lineHeight: 1.6, maxWidth: '500px' }}>
+          <p style={{ color: '#94a3b8', fontSize: '0.92rem', lineHeight: 1.6, maxWidth: '480px' }}>
             Access electronic health records, doctor consultations, laboratory diagnostics, pharmacy inventory, and billing services in one secure portal.
           </p>
 
-          <div style={{ marginTop: '32px' }}>
-            <span style={{ fontSize: '0.78rem', color: '#64748b', fontWeight: 600, display: 'block', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-              Click Any Role to Test Sign In:
+          <div style={{ marginTop: '28px' }}>
+            <span style={{ fontSize: '0.8rem', color: '#38bdf8', fontWeight: 700, display: 'block', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+              ⚡ One-Click Instant Role Sign In:
             </span>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-              {[
-                { r: 'ADMIN', label: 'Administrator', email: 'admin@hms.com' },
-                { r: 'DOCTOR', label: 'Physician / Doctor', email: 'doctor@hms.com' },
-                { r: 'PATIENT', label: 'Patient Portal', email: 'patient@hms.com' },
-                { r: 'LAB_TECHNICIAN', label: 'Lab Technician', email: 'lab@hms.com' },
-                { r: 'PHARMACIST', label: 'Pharmacist', email: 'pharmacy@hms.com' },
-                { r: 'BILLING_STAFF', label: 'Billing Staff', email: 'billing@hms.com' }
-              ].map(item => (
+              {roleButtons.map(item => (
                 <button
                   key={item.r}
                   type="button"
-                  onClick={() => handleRoleQuickSelect(item.r, item.email)}
+                  onClick={() => handleQuickRoleLogin(item.r, item.email, item.name, item.path)}
                   style={{
                     padding: '10px 12px',
                     borderRadius: '8px',
-                    background: role === item.r ? 'rgba(6,182,212,0.15)' : 'rgba(255,255,255,0.03)',
+                    background: role === item.r ? 'linear-gradient(135deg, rgba(6,182,212,0.25), rgba(59,130,246,0.25))' : 'rgba(255,255,255,0.04)',
                     border: role === item.r ? '1px solid #06b6d4' : '1px solid var(--border-color)',
-                    color: role === item.r ? '#38bdf8' : '#cbd5e1',
+                    color: '#f8fafc',
                     textAlign: 'left',
                     cursor: 'pointer',
                     fontSize: '0.8rem',
-                    fontWeight: 600
+                    fontWeight: 600,
+                    transition: 'all 0.2s'
                   }}
                 >
-                  {item.label}
+                  ➔ {item.label}
                 </button>
               ))}
             </div>
@@ -169,17 +169,17 @@ export default function Login({ onLoginSuccess }) {
 
         <div style={{ display: 'flex', justifyContent: 'space-between', color: '#64748b', fontSize: '0.8rem' }}>
           <span>© 2026 St. Jude Medical Center</span>
-          <span>HIPAA & GDPR Security</span>
+          <span>HIPAA & GDPR Compliant</span>
         </div>
       </div>
 
-      {/* Right Panel - Sign In Form */}
+      {/* Right Panel - Form Sign In */}
       <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px' }}>
         <div style={{ width: '100%', maxWidth: '420px' }}>
-          <div style={{ marginBottom: '32px' }}>
-            <h2 style={{ fontSize: '1.8rem', fontWeight: 700, color: 'var(--text-primary)' }}>Hospital System Sign In</h2>
+          <div style={{ marginBottom: '28px' }}>
+            <h2 style={{ fontSize: '1.8rem', fontWeight: 700, color: 'var(--text-primary)' }}>Hospital Sign In</h2>
             <p style={{ color: '#94a3b8', fontSize: '0.9rem', marginTop: '6px' }}>
-              Select role and click Sign In to enter your hospital workspace
+              Enter credentials or select a role to access your portal
             </p>
           </div>
 
@@ -189,31 +189,26 @@ export default function Login({ onLoginSuccess }) {
             </div>
           )}
 
-          <form onSubmit={handleLogin}>
+          <form onSubmit={handleLoginSubmit}>
             <div style={{ marginBottom: '18px' }}>
-              <label style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Hospital Role Workspace</label>
+              <label style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Hospital Role Portal</label>
               <select
                 value={role}
                 onChange={(e) => {
                   const selectedRole = e.target.value;
                   setRole(selectedRole);
-                  if (selectedRole === 'ADMIN') setEmail('admin@hms.com');
-                  else if (selectedRole === 'DOCTOR') setEmail('doctor@hms.com');
-                  else if (selectedRole === 'PATIENT') setEmail('patient@hms.com');
-                  else if (selectedRole === 'LAB_TECHNICIAN') setEmail('lab@hms.com');
-                  else if (selectedRole === 'PHARMACIST') setEmail('pharmacy@hms.com');
-                  else if (selectedRole === 'BILLING_STAFF') setEmail('billing@hms.com');
-                  else if (selectedRole === 'BED_MANAGER') setEmail('bed@hms.com');
+                  const matched = roleButtons.find(b => b.r === selectedRole);
+                  if (matched) setEmail(matched.email);
                 }}
                 style={{ marginTop: '6px' }}
               >
-                <option value="ADMIN">Administrator</option>
-                <option value="DOCTOR">Attending Physician / Doctor</option>
-                <option value="PATIENT">Patient Account</option>
-                <option value="LAB_TECHNICIAN">Laboratory Technician</option>
-                <option value="PHARMACIST">Hospital Pharmacist</option>
-                <option value="BILLING_STAFF">Billing & Accounts Staff</option>
-                <option value="BED_MANAGER">Ward & Bed Manager</option>
+                <option value="ADMIN">Administrator (/admin/dashboard)</option>
+                <option value="DOCTOR">Attending Physician (/doctor-portal)</option>
+                <option value="PATIENT">Patient Account (/patient-portal)</option>
+                <option value="LAB_TECHNICIAN">Laboratory Technician (/lab-portal)</option>
+                <option value="PHARMACIST">Hospital Pharmacist (/pharmacy-portal)</option>
+                <option value="BILLING_STAFF">Billing & Accounts (/billing-portal)</option>
+                <option value="BED_MANAGER">Ward & Bed Manager (/bed-portal)</option>
               </select>
             </div>
 
@@ -271,10 +266,30 @@ export default function Login({ onLoginSuccess }) {
               </label>
             </div>
 
-            <button type="submit" className="btn btn-primary" style={{ width: '100%', justifyContent: 'center', padding: '12px', fontSize: '0.95rem' }} disabled={loading}>
-              {loading ? 'Signing in...' : <>Sign In to Hospital Workspace <ArrowRight size={18} /></>}
+            <button type="submit" className="btn btn-primary" style={{ width: '100%', justifyContent: 'center', padding: '12px', fontSize: '0.95rem' }}>
+              Sign In to Hospital Workspace <ArrowRight size={18} />
             </button>
           </form>
+
+          {/* Quick Buttons for Mobile Users */}
+          <div style={{ marginTop: '24px', paddingTop: '20px', borderTop: '1px solid var(--border-color)' }}>
+            <span style={{ fontSize: '0.78rem', color: '#94a3b8', display: 'block', marginBottom: '10px', fontWeight: 600 }}>
+              QUICK SIGN IN ROLE PORTALS:
+            </span>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+              {roleButtons.map(item => (
+                <button
+                  key={item.r}
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => handleQuickRoleLogin(item.r, item.email, item.name, item.path)}
+                  style={{ padding: '4px 10px', fontSize: '0.75rem' }}
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
 
