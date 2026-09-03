@@ -3,7 +3,7 @@ import { Save, CheckCircle } from 'lucide-react';
 
 export default function SettingsPage() {
   const [settings, setSettings] = useState({
-    hospitalName: 'St. Jude Medical Center & Research Hospital',
+    hospitalName: 'Hospital Management System',
     address: '742 Evergreen Terrace, Medical District, NY 10001',
     phone: '+1 (800) 555-4000',
     email: 'contact@hospital.local',

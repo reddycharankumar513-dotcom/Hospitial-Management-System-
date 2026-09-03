@@ -56,7 +56,7 @@ function TopNavbar({ userRole, userName, onLogout, onRoleChange }) {
             <HeartPulse size={22} color="#06b6d4" />
           </div>
           <span style={{ fontWeight: 800, fontSize: '1.1rem', color: '#f8fafc', letterSpacing: '-0.3px' }}>
-            St. Jude Hospital
+            Hospital Management System
           </span>
         </Link>
 

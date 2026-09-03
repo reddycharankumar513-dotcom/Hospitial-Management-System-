@@ -121,7 +121,7 @@ export default function Login({ onLoginSuccess }) {
           </div>
           <div>
             <h1 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#f8fafc', letterSpacing: '-0.3px' }}>
-              St. Jude Health System
+              Hospital Management System
             </h1>
             <span style={{ fontSize: '0.8rem', color: '#06b6d4', fontWeight: 600 }}>Integrated Hospital Access Portal</span>
           </div>
