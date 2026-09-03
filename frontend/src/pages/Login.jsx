@@ -1,29 +1,54 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { HeartPulse, Eye, EyeOff, Lock, Mail, ArrowRight, AlertCircle, CheckCircle, ShieldCheck, UserCheck } from 'lucide-react';
+import { HeartPulse, Eye, EyeOff, Lock, Mail, ArrowRight, AlertCircle, CheckCircle, UserPlus, Shield, User, Activity, Stethoscope, TestTube, Pill, CreditCard, BedDouble } from 'lucide-react';
 import Modal from '../components/common/Modal';
 
 export default function Login({ onLoginSuccess }) {
-  const [email, setEmail] = useState('admin@hms.com');
-  const [password, setPassword] = useState('admin123');
-  const [role, setRole] = useState('ADMIN');
+  const [activeTab, setActiveTab] = useState('SIGN_IN'); // 'SIGN_IN' or 'REGISTER'
+  const [selectedRole, setSelectedRole] = useState('PATIENT');
+
+  // Login Form State
+  const [email, setEmail] = useState('patient@hms.com');
+  const [password, setPassword] = useState('password123');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
   const [errorMsg, setErrorMsg] = useState('');
 
+  // Register Patient Form State
+  const [regData, setRegData] = useState({
+    fullName: '',
+    email: '',
+    phone: '',
+    dob: '1998-05-15',
+    gender: 'Male',
+    password: ''
+  });
+  const [regSuccessMsg, setRegSuccessMsg] = useState('');
+
+  // Forgot Password State
   const [showForgotModal, setShowForgotModal] = useState(false);
   const [forgotEmail, setForgotEmail] = useState('');
   const [forgotSuccess, setForgotSuccess] = useState('');
 
   const navigate = useNavigate();
 
-  // Instant login helper for any role
-  const performLogin = (targetRole, userEmail, userName, targetPath) => {
+  // Role Configuration List
+  const rolePortals = [
+    { id: 'ADMIN', title: 'Admin Login', desc: 'System management, users & audit logs', icon: Shield, color: '#3b82f6', defaultEmail: 'admin@hms.com', name: 'System Administrator', path: '/admin/dashboard' },
+    { id: 'DOCTOR', title: 'Doctor Login', desc: 'Consultations, queue & Patient 360°', icon: Stethoscope, color: '#06b6d4', defaultEmail: 'doctor@hms.com', name: 'Dr. John Doe', path: '/doctor-portal' },
+    { id: 'PATIENT', title: 'Patient Login / Register', desc: 'Appointments, lab reports & billing', icon: User, color: '#10b981', defaultEmail: 'patient@hms.com', name: 'Peter Parker', path: '/patient-portal' },
+    { id: 'LAB_TECHNICIAN', title: 'Lab Technician Login', desc: 'Sample collection & test results', icon: TestTube, color: '#f59e0b', defaultEmail: 'lab@hms.com', name: 'Alex Mercer', path: '/lab-portal' },
+    { id: 'PHARMACIST', title: 'Pharmacist Login', desc: 'Prescriptions & inventory stock', icon: Pill, color: '#ec4899', defaultEmail: 'pharmacy@hms.com', name: 'Sarah Jenkins', path: '/pharmacy-portal' },
+    { id: 'BILLING_STAFF', title: 'Billing Staff Login', desc: 'Invoices & payment processing', icon: CreditCard, color: '#8b5cf6', defaultEmail: 'billing@hms.com', name: 'Robert Vance', path: '/billing-portal' },
+    { id: 'BED_MANAGER', title: 'Bed Manager Login', desc: 'Ward bed allocation & admissions', icon: BedDouble, color: '#6366f1', defaultEmail: 'bed@hms.com', name: 'Elena Rostova', path: '/bed-portal' }
+  ];
+
+  const performLogin = (r, uEmail, uName, uPath) => {
     const userData = {
-      token: `jwt-${targetRole.toLowerCase()}-token-${Date.now()}`,
-      role: targetRole,
-      name: userName,
-      email: userEmail
+      token: `jwt-${r.toLowerCase()}-token-${Date.now()}`,
+      role: r,
+      name: uName,
+      email: uEmail
     };
 
     localStorage.setItem('userToken', userData.token);
@@ -34,59 +59,36 @@ export default function Login({ onLoginSuccess }) {
       onLoginSuccess(userData);
     }
 
-    navigate(targetPath);
+    navigate(uPath);
   };
 
-  const handleQuickRoleLogin = (selectedRole, defaultEmail, name, path) => {
-    performLogin(selectedRole, defaultEmail, name, path);
+  const handleRoleCardClick = (portal) => {
+    setSelectedRole(portal.id);
+    setEmail(portal.defaultEmail);
+    performLogin(portal.id, portal.defaultEmail, portal.name, portal.path);
   };
 
-  const handleLoginSubmit = (e) => {
-    if (e) e.preventDefault();
+  const handleSignInSubmit = (e) => {
+    e.preventDefault();
     setErrorMsg('');
 
     if (!email) {
-      setErrorMsg('Please enter your email or username.');
+      setErrorMsg('Please enter your email address or username.');
       return;
     }
 
-    let targetRole = role;
-    let userName = 'Hospital User';
-    let targetPath = '/admin/dashboard';
+    const matchedPortal = rolePortals.find(p => p.id === selectedRole) || rolePortals[2];
+    performLogin(selectedRole, email, matchedPortal.name, matchedPortal.path);
+  };
 
-    const em = email.toLowerCase();
-
-    if (em.includes('admin') || role === 'ADMIN') {
-      targetRole = 'ADMIN';
-      userName = 'System Administrator';
-      targetPath = '/admin/dashboard';
-    } else if (em.includes('doctor') || role === 'DOCTOR') {
-      targetRole = 'DOCTOR';
-      userName = 'Dr. John Doe (Cardiology)';
-      targetPath = '/doctor-portal';
-    } else if (em.includes('patient') || role === 'PATIENT') {
-      targetRole = 'PATIENT';
-      userName = 'Peter Parker (PAT-1001)';
-      targetPath = '/patient-portal';
-    } else if (em.includes('lab') || role === 'LAB_TECHNICIAN') {
-      targetRole = 'LAB_TECHNICIAN';
-      userName = 'Alex Mercer (Lab Tech)';
-      targetPath = '/lab-portal';
-    } else if (em.includes('pharmacy') || role === 'PHARMACIST') {
-      targetRole = 'PHARMACIST';
-      userName = 'Sarah Jenkins (Pharmacist)';
-      targetPath = '/pharmacy-portal';
-    } else if (em.includes('billing') || role === 'BILLING_STAFF') {
-      targetRole = 'BILLING_STAFF';
-      userName = 'Robert Vance (Billing Officer)';
-      targetPath = '/billing-portal';
-    } else if (em.includes('bed') || role === 'BED_MANAGER') {
-      targetRole = 'BED_MANAGER';
-      userName = 'Elena Rostova (Ward Manager)';
-      targetPath = '/bed-portal';
-    }
-
-    performLogin(targetRole, email, userName, targetPath);
+  const handleRegisterSubmit = (e) => {
+    e.preventDefault();
+    setRegSuccessMsg(`Patient Account created successfully for ${regData.fullName}! You can now sign in.`);
+    setEmail(regData.email);
+    setTimeout(() => {
+      setActiveTab('SIGN_IN');
+      setSelectedRole('PATIENT');
+    }, 1200);
   };
 
   const handleForgotSubmit = (e) => {
@@ -94,203 +96,212 @@ export default function Login({ onLoginSuccess }) {
     setForgotSuccess('If your account is registered, a password reset link has been dispatched to your email address.');
   };
 
-  const roleButtons = [
-    { r: 'ADMIN', label: 'Administrator', email: 'admin@hms.com', name: 'System Administrator', path: '/admin/dashboard' },
-    { r: 'DOCTOR', label: 'Doctor 360°', email: 'doctor@hms.com', name: 'Dr. John Doe', path: '/doctor-portal' },
-    { r: 'PATIENT', label: 'Patient Portal', email: 'patient@hms.com', name: 'Peter Parker', path: '/patient-portal' },
-    { r: 'LAB_TECHNICIAN', label: 'Lab Tech', email: 'lab@hms.com', name: 'Alex Mercer', path: '/lab-portal' },
-    { r: 'PHARMACIST', label: 'Pharmacist', email: 'pharmacy@hms.com', name: 'Sarah Jenkins', path: '/pharmacy-portal' },
-    { r: 'BILLING_STAFF', label: 'Billing Officer', email: 'billing@hms.com', name: 'Robert Vance', path: '/billing-portal' },
-    { r: 'BED_MANAGER', label: 'Bed Manager', email: 'bed@hms.com', name: 'Elena Rostova', path: '/bed-portal' }
-  ];
-
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg-primary)' }}>
-      {/* Left Panel - Hospital SaaS Branding */}
-      <div style={{
-        flex: 1.1,
-        background: 'linear-gradient(135deg, rgba(15,23,42,0.98), rgba(30,41,59,0.95))',
-        borderRight: '1px solid var(--border-color)',
-        padding: '50px',
+    <div style={{ minHeight: '100vh', background: 'var(--bg-primary)', display: 'flex', flexDirection: 'column' }}>
+      {/* Top Branding Header */}
+      <header style={{
+        background: 'rgba(15, 23, 42, 0.95)',
+        borderBottom: '1px solid var(--border-color)',
+        padding: '16px 40px',
         display: 'flex',
-        flexDirection: 'column',
+        alignItems: 'center',
         justifyContent: 'space-between'
-      }} className="desktop-only">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-          <div style={{ padding: '10px', background: 'rgba(6,182,212,0.15)', borderRadius: '12px', border: '1px solid rgba(6,182,212,0.3)' }}>
-            <HeartPulse size={36} color="#06b6d4" />
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{ padding: '8px', background: 'rgba(6,182,212,0.15)', borderRadius: '10px', border: '1px solid rgba(6,182,212,0.3)' }}>
+            <HeartPulse size={28} color="#06b6d4" />
           </div>
           <div>
-            <h1 style={{ fontSize: '1.6rem', fontWeight: 800, color: '#f8fafc', letterSpacing: '-0.5px' }}>
+            <h1 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#f8fafc', letterSpacing: '-0.3px' }}>
               St. Jude Health System
             </h1>
-            <span style={{ fontSize: '0.85rem', color: '#06b6d4', fontWeight: 600 }}>Integrated Hospital Operations Portal</span>
+            <span style={{ fontSize: '0.8rem', color: '#06b6d4', fontWeight: 600 }}>Enterprise Hospital Access Portal</span>
           </div>
         </div>
 
-        <div style={{ margin: 'auto 0' }}>
-          <span className="badge badge-info" style={{ marginBottom: '16px', display: 'inline-block' }}>ENTERPRISE HEALTHCARE PLATFORM</span>
-          <h2 style={{ fontSize: '2.2rem', lineHeight: 1.25, fontWeight: 700, marginBottom: '16px', color: '#f8fafc' }}>
-            Unified Clinical & Patient Operations Portal
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <button
+            className="btn"
+            onClick={() => setActiveTab('SIGN_IN')}
+            style={{
+              padding: '6px 16px',
+              fontSize: '0.85rem',
+              background: activeTab === 'SIGN_IN' ? 'linear-gradient(135deg, #06b6d4, #3b82f6)' : 'rgba(255,255,255,0.05)',
+              color: activeTab === 'SIGN_IN' ? '#fff' : '#94a3b8'
+            }}
+          >
+            Hospital Sign In
+          </button>
+          <button
+            className="btn"
+            onClick={() => { setActiveTab('REGISTER'); setSelectedRole('PATIENT'); }}
+            style={{
+              padding: '6px 16px',
+              fontSize: '0.85rem',
+              background: activeTab === 'REGISTER' ? 'linear-gradient(135deg, #10b981, #059669)' : 'rgba(255,255,255,0.05)',
+              color: activeTab === 'REGISTER' ? '#fff' : '#94a3b8'
+            }}
+          >
+            <UserPlus size={16} /> Patient Registration
+          </button>
+        </div>
+      </header>
+
+      {/* Main Content Area */}
+      <div style={{ flex: 1, padding: '40px', maxWidth: '1280px', margin: '0 auto', width: '100%' }}>
+        {/* Welcome Callout Banner */}
+        <div className="glass-card" style={{ marginBottom: '32px', textAlign: 'center', background: 'linear-gradient(135deg, rgba(6,182,212,0.1), rgba(59,130,246,0.15))' }}>
+          <h2 style={{ fontSize: '2rem', fontWeight: 800, marginBottom: '8px' }}>
+            Welcome to Hospital Management Portal
           </h2>
-          <p style={{ color: '#94a3b8', fontSize: '0.92rem', lineHeight: 1.6, maxWidth: '480px' }}>
-            Access electronic health records, doctor consultations, laboratory diagnostics, pharmacy inventory, and billing services in one secure portal.
+          <p style={{ color: '#94a3b8', fontSize: '0.95rem', maxWidth: '640px', margin: '0 auto' }}>
+            Please select your role below to Sign In or Register a new Patient Account to access clinical workflows, appointments, prescriptions, laboratory reports, and billing.
           </p>
+        </div>
 
-          <div style={{ marginTop: '28px' }}>
-            <span style={{ fontSize: '0.8rem', color: '#38bdf8', fontWeight: 700, display: 'block', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-              ⚡ One-Click Instant Role Sign In:
-            </span>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-              {roleButtons.map(item => (
-                <button
-                  key={item.r}
-                  type="button"
-                  onClick={() => handleQuickRoleLogin(item.r, item.email, item.name, item.path)}
-                  style={{
-                    padding: '10px 12px',
-                    borderRadius: '8px',
-                    background: role === item.r ? 'linear-gradient(135deg, rgba(6,182,212,0.25), rgba(59,130,246,0.25))' : 'rgba(255,255,255,0.04)',
-                    border: role === item.r ? '1px solid #06b6d4' : '1px solid var(--border-color)',
-                    color: '#f8fafc',
-                    textAlign: 'left',
-                    cursor: 'pointer',
-                    fontSize: '0.8rem',
-                    fontWeight: 600,
-                    transition: 'all 0.2s'
-                  }}
-                >
-                  ➔ {item.label}
+        {activeTab === 'SIGN_IN' && (
+          <div>
+            {/* Step 1: Select Role Access Portal Cards */}
+            <h3 style={{ fontSize: '1.1rem', marginBottom: '16px', color: '#e2e8f0' }}>
+              Select Account Role to Login:
+            </h3>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '16px', marginBottom: '36px' }}>
+              {rolePortals.map(portal => {
+                const IconComp = portal.icon;
+                const isSelected = selectedRole === portal.id;
+                return (
+                  <div
+                    key={portal.id}
+                    onClick={() => handleRoleCardClick(portal)}
+                    style={{
+                      padding: '20px',
+                      borderRadius: '12px',
+                      cursor: 'pointer',
+                      background: isSelected ? 'linear-gradient(135deg, rgba(6,182,212,0.18), rgba(59,130,246,0.18))' : 'rgba(255,255,255,0.03)',
+                      border: isSelected ? `2px solid ${portal.color}` : '1px solid var(--border-color)',
+                      transition: 'all 0.2s transform'
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '10px' }}>
+                      <div style={{ padding: '8px', borderRadius: '8px', background: `${portal.color}22` }}>
+                        <IconComp size={24} color={portal.color} />
+                      </div>
+                      <strong style={{ fontSize: '1rem', color: '#f8fafc' }}>{portal.title}</strong>
+                    </div>
+                    <p style={{ fontSize: '0.8rem', color: '#94a3b8', lineHeight: 1.4 }}>{portal.desc}</p>
+                    <div style={{ marginTop: '12px', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.78rem', color: portal.color, fontWeight: 600 }}>
+                      <span>Click to Sign In as {portal.id.replace('_', ' ')}</span>
+                      <ArrowRight size={14} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Step 2: Sign In Credentials Form */}
+            <div className="glass-card" style={{ maxWidth: '520px', margin: '0 auto' }}>
+              <h3 style={{ fontSize: '1.2rem', marginBottom: '16px', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
+                Sign In Credentials ({selectedRole.replace('_', ' ')})
+              </h3>
+
+              {errorMsg && (
+                <div style={{ padding: '12px', borderRadius: '8px', background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)', color: '#f87171', marginBottom: '16px', fontSize: '0.85rem' }}>
+                  <AlertCircle size={16} /> {errorMsg}
+                </div>
+              )}
+
+              <form onSubmit={handleSignInSubmit}>
+                <div style={{ marginBottom: '16px' }}>
+                  <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Email Address or Username</label>
+                  <input
+                    type="text"
+                    required
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
+                  />
+                </div>
+
+                <div style={{ marginBottom: '16px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Password</label>
+                    <button type="button" onClick={() => setShowForgotModal(true)} style={{ background: 'none', border: 'none', color: '#06b6d4', fontSize: '0.8rem', cursor: 'pointer' }}>
+                      Forgot password?
+                    </button>
+                  </div>
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    required
+                    value={password}
+                    onChange={e => setPassword(e.target.value)}
+                  />
+                </div>
+
+                <button type="submit" className="btn btn-primary" style={{ width: '100%', justifyContent: 'center', padding: '12px', fontSize: '0.95rem' }}>
+                  Sign In to {selectedRole.replace('_', ' ')} Workspace <ArrowRight size={18} />
                 </button>
-              ))}
+              </form>
             </div>
           </div>
-        </div>
+        )}
 
-        <div style={{ display: 'flex', justifyContent: 'space-between', color: '#64748b', fontSize: '0.8rem' }}>
-          <span>© 2026 St. Jude Medical Center</span>
-          <span>HIPAA & GDPR Compliant</span>
-        </div>
-      </div>
-
-      {/* Right Panel - Form Sign In */}
-      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px' }}>
-        <div style={{ width: '100%', maxWidth: '420px' }}>
-          <div style={{ marginBottom: '28px' }}>
-            <h2 style={{ fontSize: '1.8rem', fontWeight: 700, color: 'var(--text-primary)' }}>Hospital Sign In</h2>
-            <p style={{ color: '#94a3b8', fontSize: '0.9rem', marginTop: '6px' }}>
-              Enter credentials or select a role to access your portal
+        {/* Patient Account Registration Tab */}
+        {activeTab === 'REGISTER' && (
+          <div className="glass-card" style={{ maxWidth: '600px', margin: '0 auto' }}>
+            <h3 style={{ fontSize: '1.4rem', marginBottom: '6px' }}>Patient Account Registration</h3>
+            <p style={{ fontSize: '0.85rem', color: '#94a3b8', marginBottom: '20px' }}>
+              Create your patient profile to book appointments, view prescriptions, and access medical records.
             </p>
+
+            {regSuccessMsg && (
+              <div style={{ padding: '12px', borderRadius: '8px', background: 'rgba(16,185,129,0.15)', border: '1px solid #10b981', color: '#34d399', marginBottom: '20px', fontSize: '0.85rem' }}>
+                <CheckCircle size={18} /> {regSuccessMsg}
+              </div>
+            )}
+
+            <form onSubmit={handleRegisterSubmit}>
+              <div style={{ marginBottom: '14px' }}>
+                <label>Full Patient Name</label>
+                <input required placeholder="Peter Parker" value={regData.fullName} onChange={e => setRegData({ ...regData, fullName: e.target.value })} />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '14px' }}>
+                <div>
+                  <label>Email Address</label>
+                  <input type="email" required placeholder="patient@hms.com" value={regData.email} onChange={e => setRegData({ ...regData, email: e.target.value })} />
+                </div>
+                <div>
+                  <label>Contact Phone</label>
+                  <input required placeholder="+1 555-0199" value={regData.phone} onChange={e => setRegData({ ...regData, phone: e.target.value })} />
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '14px' }}>
+                <div>
+                  <label>Date of Birth</label>
+                  <input type="date" value={regData.dob} onChange={e => setRegData({ ...regData, dob: e.target.value })} />
+                </div>
+                <div>
+                  <label>Gender</label>
+                  <select value={regData.gender} onChange={e => setRegData({ ...regData, gender: e.target.value })}>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+              </div>
+
+              <div style={{ marginBottom: '20px' }}>
+                <label>Account Password</label>
+                <input type="password" required placeholder="••••••••" value={regData.password} onChange={e => setRegData({ ...regData, password: e.target.value })} />
+              </div>
+
+              <button type="submit" className="btn btn-primary" style={{ width: '100%', justifyContent: 'center', padding: '12px', fontSize: '0.95rem' }}>
+                Create Patient Account & Sign In
+              </button>
+            </form>
           </div>
-
-          {errorMsg && (
-            <div style={{ padding: '12px', borderRadius: '8px', background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)', color: '#f87171', display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px', fontSize: '0.85rem' }}>
-              <AlertCircle size={18} /> {errorMsg}
-            </div>
-          )}
-
-          <form onSubmit={handleLoginSubmit}>
-            <div style={{ marginBottom: '18px' }}>
-              <label style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Hospital Role Portal</label>
-              <select
-                value={role}
-                onChange={(e) => {
-                  const selectedRole = e.target.value;
-                  setRole(selectedRole);
-                  const matched = roleButtons.find(b => b.r === selectedRole);
-                  if (matched) setEmail(matched.email);
-                }}
-                style={{ marginTop: '6px' }}
-              >
-                <option value="ADMIN">Administrator (/admin/dashboard)</option>
-                <option value="DOCTOR">Attending Physician (/doctor-portal)</option>
-                <option value="PATIENT">Patient Account (/patient-portal)</option>
-                <option value="LAB_TECHNICIAN">Laboratory Technician (/lab-portal)</option>
-                <option value="PHARMACIST">Hospital Pharmacist (/pharmacy-portal)</option>
-                <option value="BILLING_STAFF">Billing & Accounts (/billing-portal)</option>
-                <option value="BED_MANAGER">Ward & Bed Manager (/bed-portal)</option>
-              </select>
-            </div>
-
-            <div style={{ marginBottom: '18px' }}>
-              <label style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Email or Username</label>
-              <div style={{ position: 'relative', marginTop: '6px' }}>
-                <Mail size={18} color="#94a3b8" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
-                <input
-                  type="text"
-                  required
-                  placeholder="name@hms.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  style={{ paddingLeft: '38px' }}
-                />
-              </div>
-            </div>
-
-            <div style={{ marginBottom: '18px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <label style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Password</label>
-                <button type="button" onClick={() => setShowForgotModal(true)} style={{ background: 'none', border: 'none', color: '#06b6d4', fontSize: '0.8rem', cursor: 'pointer' }}>
-                  Forgot password?
-                </button>
-              </div>
-              <div style={{ position: 'relative', marginTop: '6px' }}>
-                <Lock size={18} color="#94a3b8" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  required
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  style={{ paddingLeft: '38px', paddingRight: '38px' }}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer' }}
-                >
-                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                </button>
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem', color: '#94a3b8', cursor: 'pointer' }}>
-                <input
-                  type="checkbox"
-                  checked={rememberMe}
-                  onChange={(e) => setRememberMe(e.target.checked)}
-                  style={{ width: 'auto', marginTop: 0 }}
-                />
-                Keep me signed in
-              </label>
-            </div>
-
-            <button type="submit" className="btn btn-primary" style={{ width: '100%', justifyContent: 'center', padding: '12px', fontSize: '0.95rem' }}>
-              Sign In to Hospital Workspace <ArrowRight size={18} />
-            </button>
-          </form>
-
-          {/* Quick Buttons for Mobile Users */}
-          <div style={{ marginTop: '24px', paddingTop: '20px', borderTop: '1px solid var(--border-color)' }}>
-            <span style={{ fontSize: '0.78rem', color: '#94a3b8', display: 'block', marginBottom: '10px', fontWeight: 600 }}>
-              QUICK SIGN IN ROLE PORTALS:
-            </span>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-              {roleButtons.map(item => (
-                <button
-                  key={item.r}
-                  type="button"
-                  className="btn btn-secondary"
-                  onClick={() => handleQuickRoleLogin(item.r, item.email, item.name, item.path)}
-                  style={{ padding: '4px 10px', fontSize: '0.75rem' }}
-                >
-                  {item.label}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
+        )}
       </div>
 
       {/* Forgot Password Modal */}
@@ -303,14 +314,14 @@ export default function Login({ onLoginSuccess }) {
         ) : (
           <form onSubmit={handleForgotSubmit}>
             <p style={{ fontSize: '0.85rem', color: '#94a3b8', marginBottom: '16px' }}>
-              Enter your registered staff email address to receive password reset instructions.
+              Enter your registered staff or patient email address to receive password reset instructions.
             </p>
             <div style={{ marginBottom: '20px' }}>
               <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Email Address</label>
               <input
                 type="email"
                 required
-                placeholder="staff@hms.com"
+                placeholder="user@hms.com"
                 value={forgotEmail}
                 onChange={(e) => setForgotEmail(e.target.value)}
               />
