@@ -1,20 +1,20 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { HeartPulse, Eye, EyeOff, Lock, Mail, ArrowRight, AlertCircle, CheckCircle, UserPlus, Shield, User, Activity, Stethoscope, TestTube, Pill, CreditCard, BedDouble } from 'lucide-react';
+import { HeartPulse, Eye, EyeOff, Lock, Mail, ArrowRight, AlertCircle, CheckCircle, UserPlus, Shield, User, Stethoscope, TestTube, Pill, CreditCard, BedDouble, Key } from 'lucide-react';
 import Modal from '../components/common/Modal';
 
 export default function Login({ onLoginSuccess }) {
-  const [activeTab, setActiveTab] = useState('SIGN_IN'); // 'SIGN_IN' or 'REGISTER'
-  const [selectedRole, setSelectedRole] = useState('PATIENT');
+  const [activeModalRole, setActiveModalRole] = useState(null); // null or role object
+  const [isRegisterMode, setIsRegisterMode] = useState(false);
 
-  // Login Form State
-  const [email, setEmail] = useState('patient@hms.com');
+  // Form State
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('password123');
   const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(true);
   const [errorMsg, setErrorMsg] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  // Register Patient Form State
+  // Patient Registration Form State
   const [regData, setRegData] = useState({
     fullName: '',
     email: '',
@@ -32,68 +32,72 @@ export default function Login({ onLoginSuccess }) {
 
   const navigate = useNavigate();
 
-  // Role Configuration List
-  const rolePortals = [
-    { id: 'ADMIN', title: 'Admin Login', desc: 'System management, users & audit logs', icon: Shield, color: '#3b82f6', defaultEmail: 'admin@hms.com', name: 'System Administrator', path: '/admin/dashboard' },
-    { id: 'DOCTOR', title: 'Doctor Login', desc: 'Consultations, queue & Patient 360°', icon: Stethoscope, color: '#06b6d4', defaultEmail: 'doctor@hms.com', name: 'Dr. John Doe', path: '/doctor-portal' },
-    { id: 'PATIENT', title: 'Patient Login / Register', desc: 'Appointments, lab reports & billing', icon: User, color: '#10b981', defaultEmail: 'patient@hms.com', name: 'Peter Parker', path: '/patient-portal' },
-    { id: 'LAB_TECHNICIAN', title: 'Lab Technician Login', desc: 'Sample collection & test results', icon: TestTube, color: '#f59e0b', defaultEmail: 'lab@hms.com', name: 'Alex Mercer', path: '/lab-portal' },
-    { id: 'PHARMACIST', title: 'Pharmacist Login', desc: 'Prescriptions & inventory stock', icon: Pill, color: '#ec4899', defaultEmail: 'pharmacy@hms.com', name: 'Sarah Jenkins', path: '/pharmacy-portal' },
-    { id: 'BILLING_STAFF', title: 'Billing Staff Login', desc: 'Invoices & payment processing', icon: CreditCard, color: '#8b5cf6', defaultEmail: 'billing@hms.com', name: 'Robert Vance', path: '/billing-portal' },
-    { id: 'BED_MANAGER', title: 'Bed Manager Login', desc: 'Ward bed allocation & admissions', icon: BedDouble, color: '#6366f1', defaultEmail: 'bed@hms.com', name: 'Elena Rostova', path: '/bed-portal' }
+  // Role Configuration Roster
+  const rolesList = [
+    { id: 'ADMIN', title: 'Administrator Login', desc: 'System configuration, user management & audit logs', icon: Shield, color: '#3b82f6', defaultEmail: 'admin@hms.com', defaultName: 'System Administrator', path: '/admin/dashboard' },
+    { id: 'DOCTOR', title: 'Doctor / Physician Login', desc: 'Patient queue, clinical consultation & Patient 360°', icon: Stethoscope, color: '#06b6d4', defaultEmail: 'doctor@hms.com', defaultName: 'Dr. John Doe (Cardiology)', path: '/doctor-portal' },
+    { id: 'PATIENT', title: 'Patient Portal Login & Register', desc: 'Book appointments, view lab reports & pay bills', icon: User, color: '#10b981', defaultEmail: 'patient@hms.com', defaultName: 'Peter Parker (PAT-1001)', path: '/patient-portal' },
+    { id: 'LAB_TECHNICIAN', title: 'Lab Technician Login', desc: 'Sample collection, result entry & Kafka events', icon: TestTube, color: '#f59e0b', defaultEmail: 'lab@hms.com', defaultName: 'Alex Mercer (Lab Tech)', path: '/lab-portal' },
+    { id: 'PHARMACIST', title: 'Pharmacist Login', desc: 'Prescriptions queue & atomic inventory deduction', icon: Pill, color: '#ec4899', defaultEmail: 'pharmacy@hms.com', defaultName: 'Sarah Jenkins (Pharmacist)', path: '/pharmacy-portal' },
+    { id: 'BILLING_STAFF', title: 'Billing Staff Login', desc: 'Invoices & multi-channel payment settlement', icon: CreditCard, color: '#8b5cf6', defaultEmail: 'billing@hms.com', defaultName: 'Robert Vance (Billing Officer)', path: '/billing-portal' },
+    { id: 'BED_MANAGER', title: 'Ward & Bed Manager Login', desc: 'Hospital ward bed grid, admissions & discharges', icon: BedDouble, color: '#6366f1', defaultEmail: 'bed@hms.com', defaultName: 'Elena Rostova (Ward Manager)', path: '/bed-portal' }
   ];
 
-  const performLogin = (r, uEmail, uName, uPath) => {
-    const userData = {
-      token: `jwt-${r.toLowerCase()}-token-${Date.now()}`,
-      role: r,
-      name: uName,
-      email: uEmail
-    };
-
-    localStorage.setItem('userToken', userData.token);
-    localStorage.setItem('userRole', userData.role);
-    localStorage.setItem('userName', userData.name);
-
-    if (onLoginSuccess) {
-      onLoginSuccess(userData);
-    }
-
-    navigate(uPath);
+  const handleOpenRoleModal = (roleObj, registerMode = false) => {
+    setActiveModalRole(roleObj);
+    setIsRegisterMode(registerMode);
+    setEmail(roleObj.defaultEmail);
+    setPassword('password123');
+    setErrorMsg('');
+    setRegSuccessMsg('');
   };
 
-  const handleRoleCardClick = (portal) => {
-    setSelectedRole(portal.id);
-    setEmail(portal.defaultEmail);
-    performLogin(portal.id, portal.defaultEmail, portal.name, portal.path);
-  };
-
-  const handleSignInSubmit = (e) => {
-    e.preventDefault();
+  const handleExecuteLogin = (roleObj, userEmail) => {
+    setLoading(true);
     setErrorMsg('');
 
-    if (!email) {
-      setErrorMsg('Please enter your email address or username.');
-      return;
-    }
+    setTimeout(() => {
+      setLoading(false);
+      const userData = {
+        token: `jwt-${roleObj.id.toLowerCase()}-token-${Date.now()}`,
+        role: roleObj.id,
+        name: roleObj.defaultName,
+        email: userEmail || roleObj.defaultEmail
+      };
 
-    const matchedPortal = rolePortals.find(p => p.id === selectedRole) || rolePortals[2];
-    performLogin(selectedRole, email, matchedPortal.name, matchedPortal.path);
+      localStorage.setItem('userToken', userData.token);
+      localStorage.setItem('userRole', userData.role);
+      localStorage.setItem('userName', userData.name);
+
+      if (onLoginSuccess) {
+        onLoginSuccess(userData);
+      }
+
+      setActiveModalRole(null);
+      navigate(roleObj.path);
+    }, 300);
   };
 
-  const handleRegisterSubmit = (e) => {
+  const handleFormLoginSubmit = (e) => {
     e.preventDefault();
-    setRegSuccessMsg(`Patient Account created successfully for ${regData.fullName}! You can now sign in.`);
-    setEmail(regData.email);
+    if (!email) {
+      setErrorMsg('Please enter your email or username.');
+      return;
+    }
+    handleExecuteLogin(activeModalRole, email);
+  };
+
+  const handlePatientRegisterSubmit = (e) => {
+    e.preventDefault();
+    setRegSuccessMsg(`Account created for ${regData.fullName}! Redirecting to Patient Portal...`);
     setTimeout(() => {
-      setActiveTab('SIGN_IN');
-      setSelectedRole('PATIENT');
-    }, 1200);
+      handleExecuteLogin(rolesList[2], regData.email || 'patient@hms.com');
+    }, 1000);
   };
 
   const handleForgotSubmit = (e) => {
     e.preventDefault();
-    setForgotSuccess('If your account is registered, a password reset link has been dispatched to your email address.');
+    setForgotSuccess('A password reset token has been dispatched to your email address.');
   };
 
   return (
@@ -101,11 +105,15 @@ export default function Login({ onLoginSuccess }) {
       {/* Top Branding Header */}
       <header style={{
         background: 'rgba(15, 23, 42, 0.95)',
+        backdropFilter: 'blur(10px)',
         borderBottom: '1px solid var(--border-color)',
         padding: '16px 40px',
         display: 'flex',
         alignItems: 'center',
-        justifyContent: 'space-between'
+        justifyContent: 'space-between',
+        position: 'sticky',
+        top: 0,
+        zIndex: 100
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <div style={{ padding: '8px', background: 'rgba(6,182,212,0.15)', borderRadius: '10px', border: '1px solid rgba(6,182,212,0.3)' }}>
@@ -115,174 +123,135 @@ export default function Login({ onLoginSuccess }) {
             <h1 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#f8fafc', letterSpacing: '-0.3px' }}>
               St. Jude Health System
             </h1>
-            <span style={{ fontSize: '0.8rem', color: '#06b6d4', fontWeight: 600 }}>Enterprise Hospital Access Portal</span>
+            <span style={{ fontSize: '0.8rem', color: '#06b6d4', fontWeight: 600 }}>Integrated Hospital Access Portal</span>
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: '10px' }}>
+        <div style={{ display: 'flex', gap: '12px' }}>
           <button
-            className="btn"
-            onClick={() => setActiveTab('SIGN_IN')}
-            style={{
-              padding: '6px 16px',
-              fontSize: '0.85rem',
-              background: activeTab === 'SIGN_IN' ? 'linear-gradient(135deg, #06b6d4, #3b82f6)' : 'rgba(255,255,255,0.05)',
-              color: activeTab === 'SIGN_IN' ? '#fff' : '#94a3b8'
-            }}
+            className="btn btn-primary"
+            onClick={() => handleOpenRoleModal(rolesList[2], true)}
+            style={{ padding: '8px 16px', fontSize: '0.85rem' }}
           >
-            Hospital Sign In
-          </button>
-          <button
-            className="btn"
-            onClick={() => { setActiveTab('REGISTER'); setSelectedRole('PATIENT'); }}
-            style={{
-              padding: '6px 16px',
-              fontSize: '0.85rem',
-              background: activeTab === 'REGISTER' ? 'linear-gradient(135deg, #10b981, #059669)' : 'rgba(255,255,255,0.05)',
-              color: activeTab === 'REGISTER' ? '#fff' : '#94a3b8'
-            }}
-          >
-            <UserPlus size={16} /> Patient Registration
+            <UserPlus size={16} /> New Patient Registration
           </button>
         </div>
       </header>
 
-      {/* Main Content Area */}
-      <div style={{ flex: 1, padding: '40px', maxWidth: '1280px', margin: '0 auto', width: '100%' }}>
-        {/* Welcome Callout Banner */}
+      {/* Main Container */}
+      <div style={{ flex: 1, padding: '40px 24px', maxWidth: '1280px', margin: '0 auto', width: '100%' }}>
+        {/* Welcome Header */}
         <div className="glass-card" style={{ marginBottom: '32px', textAlign: 'center', background: 'linear-gradient(135deg, rgba(6,182,212,0.1), rgba(59,130,246,0.15))' }}>
-          <h2 style={{ fontSize: '2rem', fontWeight: 800, marginBottom: '8px' }}>
-            Welcome to Hospital Management Portal
+          <h2 style={{ fontSize: '2.1rem', fontWeight: 800, marginBottom: '8px', color: '#f8fafc' }}>
+            Hospital Role Access & Sign In Portal
           </h2>
-          <p style={{ color: '#94a3b8', fontSize: '0.95rem', maxWidth: '640px', margin: '0 auto' }}>
-            Please select your role below to Sign In or Register a new Patient Account to access clinical workflows, appointments, prescriptions, laboratory reports, and billing.
+          <p style={{ color: '#94a3b8', fontSize: '0.95rem', maxWidth: '680px', margin: '0 auto', lineHeight: 1.5 }}>
+            Select your account type below to Sign In or Register a new Patient Account to access clinical workflows, consultations, prescriptions, laboratory reports, and billing.
           </p>
         </div>
 
-        {activeTab === 'SIGN_IN' && (
-          <div>
-            {/* Step 1: Select Role Access Portal Cards */}
-            <h3 style={{ fontSize: '1.1rem', marginBottom: '16px', color: '#e2e8f0' }}>
-              Select Account Role to Login:
-            </h3>
+        {/* 7 Dedicated Role Access Cards Grid */}
+        <h3 style={{ fontSize: '1.15rem', marginBottom: '18px', color: '#e2e8f0', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <Key size={18} color="#06b6d4" /> Select Your Hospital Account Role to Sign In:
+        </h3>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '16px', marginBottom: '36px' }}>
-              {rolePortals.map(portal => {
-                const IconComp = portal.icon;
-                const isSelected = selectedRole === portal.id;
-                return (
-                  <div
-                    key={portal.id}
-                    onClick={() => handleRoleCardClick(portal)}
-                    style={{
-                      padding: '20px',
-                      borderRadius: '12px',
-                      cursor: 'pointer',
-                      background: isSelected ? 'linear-gradient(135deg, rgba(6,182,212,0.18), rgba(59,130,246,0.18))' : 'rgba(255,255,255,0.03)',
-                      border: isSelected ? `2px solid ${portal.color}` : '1px solid var(--border-color)',
-                      transition: 'all 0.2s transform'
-                    }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '10px' }}>
-                      <div style={{ padding: '8px', borderRadius: '8px', background: `${portal.color}22` }}>
-                        <IconComp size={24} color={portal.color} />
-                      </div>
-                      <strong style={{ fontSize: '1rem', color: '#f8fafc' }}>{portal.title}</strong>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
+          {rolesList.map(roleObj => {
+            const IconComponent = roleObj.icon;
+            return (
+              <div
+                key={roleObj.id}
+                style={{
+                  padding: '24px',
+                  borderRadius: '14px',
+                  background: 'rgba(255,255,255,0.03)',
+                  border: '1px solid var(--border-color)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                  transition: 'all 0.2s',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                }}
+              >
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '14px' }}>
+                    <div style={{ padding: '10px', borderRadius: '10px', background: `${roleObj.color}22`, border: `1px solid ${roleObj.color}44` }}>
+                      <IconComponent size={26} color={roleObj.color} />
                     </div>
-                    <p style={{ fontSize: '0.8rem', color: '#94a3b8', lineHeight: 1.4 }}>{portal.desc}</p>
-                    <div style={{ marginTop: '12px', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.78rem', color: portal.color, fontWeight: 600 }}>
-                      <span>Click to Sign In as {portal.id.replace('_', ' ')}</span>
-                      <ArrowRight size={14} />
+                    <div>
+                      <h4 style={{ fontSize: '1.05rem', color: '#f8fafc', fontWeight: 700 }}>{roleObj.title}</h4>
+                      <span className="badge badge-info" style={{ fontSize: '0.68rem', marginTop: '2px' }}>{roleObj.id}</span>
                     </div>
                   </div>
-                );
-              })}
-            </div>
+                  <p style={{ fontSize: '0.84rem', color: '#94a3b8', lineHeight: 1.5, marginBottom: '20px' }}>
+                    {roleObj.desc}
+                  </p>
+                </div>
 
-            {/* Step 2: Sign In Credentials Form */}
-            <div className="glass-card" style={{ maxWidth: '520px', margin: '0 auto' }}>
-              <h3 style={{ fontSize: '1.2rem', marginBottom: '16px', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
-                Sign In Credentials ({selectedRole.replace('_', ' ')})
-              </h3>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button
+                    className="btn btn-primary"
+                    onClick={() => handleOpenRoleModal(roleObj, false)}
+                    style={{ flex: 1, justifyContent: 'center', padding: '10px', fontSize: '0.85rem', background: `linear-gradient(135deg, ${roleObj.color}, #3b82f6)` }}
+                  >
+                    Sign In <ArrowRight size={16} />
+                  </button>
 
-              {errorMsg && (
-                <div style={{ padding: '12px', borderRadius: '8px', background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)', color: '#f87171', marginBottom: '16px', fontSize: '0.85rem' }}>
-                  <AlertCircle size={16} /> {errorMsg}
+                  {roleObj.id === 'PATIENT' && (
+                    <button
+                      className="btn btn-secondary"
+                      onClick={() => handleOpenRoleModal(roleObj, true)}
+                      style={{ padding: '10px', fontSize: '0.85rem' }}
+                    >
+                      Register
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Role Sign In / Register Interactive Modal */}
+      {activeModalRole && (
+        <Modal
+          isOpen={!!activeModalRole}
+          onClose={() => setActiveModalRole(null)}
+          title={isRegisterMode ? 'New Patient Account Registration' : `Sign In: ${activeModalRole.title}`}
+        >
+          {isRegisterMode ? (
+            /* Patient Registration Form */
+            <form onSubmit={handlePatientRegisterSubmit}>
+              {regSuccessMsg && (
+                <div style={{ padding: '12px', borderRadius: '8px', background: 'rgba(16,185,129,0.15)', border: '1px solid #10b981', color: '#34d399', marginBottom: '16px', fontSize: '0.85rem' }}>
+                  <CheckCircle size={16} /> {regSuccessMsg}
                 </div>
               )}
 
-              <form onSubmit={handleSignInSubmit}>
-                <div style={{ marginBottom: '16px' }}>
-                  <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Email Address or Username</label>
-                  <input
-                    type="text"
-                    required
-                    value={email}
-                    onChange={e => setEmail(e.target.value)}
-                  />
-                </div>
-
-                <div style={{ marginBottom: '16px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Password</label>
-                    <button type="button" onClick={() => setShowForgotModal(true)} style={{ background: 'none', border: 'none', color: '#06b6d4', fontSize: '0.8rem', cursor: 'pointer' }}>
-                      Forgot password?
-                    </button>
-                  </div>
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    required
-                    value={password}
-                    onChange={e => setPassword(e.target.value)}
-                  />
-                </div>
-
-                <button type="submit" className="btn btn-primary" style={{ width: '100%', justifyContent: 'center', padding: '12px', fontSize: '0.95rem' }}>
-                  Sign In to {selectedRole.replace('_', ' ')} Workspace <ArrowRight size={18} />
-                </button>
-              </form>
-            </div>
-          </div>
-        )}
-
-        {/* Patient Account Registration Tab */}
-        {activeTab === 'REGISTER' && (
-          <div className="glass-card" style={{ maxWidth: '600px', margin: '0 auto' }}>
-            <h3 style={{ fontSize: '1.4rem', marginBottom: '6px' }}>Patient Account Registration</h3>
-            <p style={{ fontSize: '0.85rem', color: '#94a3b8', marginBottom: '20px' }}>
-              Create your patient profile to book appointments, view prescriptions, and access medical records.
-            </p>
-
-            {regSuccessMsg && (
-              <div style={{ padding: '12px', borderRadius: '8px', background: 'rgba(16,185,129,0.15)', border: '1px solid #10b981', color: '#34d399', marginBottom: '20px', fontSize: '0.85rem' }}>
-                <CheckCircle size={18} /> {regSuccessMsg}
-              </div>
-            )}
-
-            <form onSubmit={handleRegisterSubmit}>
               <div style={{ marginBottom: '14px' }}>
-                <label>Full Patient Name</label>
+                <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Full Name</label>
                 <input required placeholder="Peter Parker" value={regData.fullName} onChange={e => setRegData({ ...regData, fullName: e.target.value })} />
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '14px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '14px' }}>
                 <div>
-                  <label>Email Address</label>
+                  <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Email Address</label>
                   <input type="email" required placeholder="patient@hms.com" value={regData.email} onChange={e => setRegData({ ...regData, email: e.target.value })} />
                 </div>
                 <div>
-                  <label>Contact Phone</label>
+                  <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Contact Phone</label>
                   <input required placeholder="+1 555-0199" value={regData.phone} onChange={e => setRegData({ ...regData, phone: e.target.value })} />
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '14px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '14px' }}>
                 <div>
-                  <label>Date of Birth</label>
+                  <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Date of Birth</label>
                   <input type="date" value={regData.dob} onChange={e => setRegData({ ...regData, dob: e.target.value })} />
                 </div>
                 <div>
-                  <label>Gender</label>
+                  <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Gender</label>
                   <select value={regData.gender} onChange={e => setRegData({ ...regData, gender: e.target.value })}>
                     <option value="Male">Male</option>
                     <option value="Female">Female</option>
@@ -292,17 +261,70 @@ export default function Login({ onLoginSuccess }) {
               </div>
 
               <div style={{ marginBottom: '20px' }}>
-                <label>Account Password</label>
+                <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Create Password</label>
                 <input type="password" required placeholder="••••••••" value={regData.password} onChange={e => setRegData({ ...regData, password: e.target.value })} />
               </div>
 
-              <button type="submit" className="btn btn-primary" style={{ width: '100%', justifyContent: 'center', padding: '12px', fontSize: '0.95rem' }}>
-                Create Patient Account & Sign In
+              <button type="submit" className="btn btn-primary" style={{ width: '100%', justifyContent: 'center', padding: '12px' }}>
+                Create Account & Sign In to Patient Portal
               </button>
             </form>
-          </div>
-        )}
-      </div>
+          ) : (
+            /* Role Sign In Form */
+            <form onSubmit={handleFormLoginSubmit}>
+              {errorMsg && (
+                <div style={{ padding: '12px', borderRadius: '8px', background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)', color: '#f87171', marginBottom: '16px', fontSize: '0.85rem' }}>
+                  <AlertCircle size={16} /> {errorMsg}
+                </div>
+              )}
+
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Email Address or Username</label>
+                <div style={{ position: 'relative', marginTop: '6px' }}>
+                  <Mail size={18} color="#94a3b8" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
+                  <input
+                    type="text"
+                    required
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
+                    style={{ paddingLeft: '38px' }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ marginBottom: '16px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Password</label>
+                  <button type="button" onClick={() => setShowForgotModal(true)} style={{ background: 'none', border: 'none', color: '#06b6d4', fontSize: '0.8rem', cursor: 'pointer' }}>
+                    Forgot password?
+                  </button>
+                </div>
+                <div style={{ position: 'relative', marginTop: '6px' }}>
+                  <Lock size={18} color="#94a3b8" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    required
+                    value={password}
+                    onChange={e => setPassword(e.target.value)}
+                    style={{ paddingLeft: '38px', paddingRight: '38px' }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer' }}
+                  >
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
+              </div>
+
+              <button type="submit" className="btn btn-primary" style={{ width: '100%', justifyContent: 'center', padding: '12px', fontSize: '0.95rem' }} disabled={loading}>
+                {loading ? 'Authenticating...' : `Enter ${activeModalRole.title}`}
+              </button>
+            </form>
+          )}
+        </Modal>
+      )}
 
       {/* Forgot Password Modal */}
       <Modal isOpen={showForgotModal} onClose={() => { setShowForgotModal(false); setForgotSuccess(''); }} title="Reset Password">
@@ -314,7 +336,7 @@ export default function Login({ onLoginSuccess }) {
         ) : (
           <form onSubmit={handleForgotSubmit}>
             <p style={{ fontSize: '0.85rem', color: '#94a3b8', marginBottom: '16px' }}>
-              Enter your registered staff or patient email address to receive password reset instructions.
+              Enter your registered email address to receive password reset instructions.
             </p>
             <div style={{ marginBottom: '20px' }}>
               <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Email Address</label>
