@@ -1,44 +1,52 @@
 import React, { useState } from 'react';
-import { Receipt, CheckCircle, CreditCard } from 'lucide-react';
 
 export default function BillingPortal() {
-  const [bills, setBills] = useState([
-    { id: 1, inv: 'INV-9001', patient: 'Peter Parker', consult: '$150.00', lab: '$50.00', rx: '$15.00', total: '$215.00', method: 'UPI', status: 'GENERATED' }
+  const [invoices, setInvoices] = useState([
+    { id: 1, invNum: 'INV-9001', patient: 'Peter Parker', items: 'Consultation + Lab Test + Medicines', total: '$215.00', status: 'UNPAID', method: '-' },
+    { id: 2, invNum: 'INV-9002', patient: 'Tony Stark', items: 'Cardiac Consultation + ECG', total: '$180.00', status: 'PAID', method: 'CREDIT_CARD' }
   ]);
 
-  const handleSettle = (id) => {
-    setBills(bills.map(b => b.id === id ? { ...b, status: 'PAID' } : b));
-    alert("Payment Settled! Generated PaymentCompleted Kafka Event -> Notification Service.");
+  const [selectedPayMethod, setSelectedPayMethod] = useState('UPI');
+
+  const handleSettlePayment = (id) => {
+    setInvoices(invoices.map(inv => inv.id === id ? { ...inv, status: 'PAID', method: selectedPayMethod } : inv));
+    alert(`Payment settled via ${selectedPayMethod}. Receipt issued.`);
   };
 
   return (
     <div>
-      <div className="glass-card" style={{ marginBottom: '24px', background: 'linear-gradient(135deg, rgba(59,130,246,0.1), rgba(16,185,129,0.15))' }}>
-        <h2>Billing & Multi-Channel Payment Settlement</h2>
-        <p style={{ color: '#94a3b8', fontSize: '0.85rem' }}>Automatic invoice generation integrating Consultation + Lab + Pharmacy</p>
+      <div className="glass-card" style={{ marginBottom: '20px' }}>
+        <h2>Billing & Invoices Portal</h2>
+        <p style={{ color: '#94a3b8', fontSize: '0.85rem', marginTop: '4px' }}>Logged in as: Robert Vance (Billing Officer)</p>
       </div>
 
       <div className="glass-card">
-        <h3>Hospital Invoices</h3>
+        <h3>Hospital Invoices & Payments</h3>
         <table>
           <thead>
-            <tr><th>Invoice #</th><th>Patient</th><th>Consultation</th><th>Lab Fee</th><th>Pharmacy Fee</th><th>Net Total</th><th>Status</th><th>Actions</th></tr>
+            <tr><th>Invoice #</th><th>Patient</th><th>Billed Items</th><th>Total Amount</th><th>Status</th><th>Payment Method</th><th>Actions</th></tr>
           </thead>
           <tbody>
-            {bills.map(b => (
-              <tr key={b.id}>
-                <td><span className="badge badge-info">{b.inv}</span></td>
-                <td><strong>{b.patient}</strong></td>
-                <td>{b.consult}</td>
-                <td>{b.lab}</td>
-                <td>{b.rx}</td>
-                <td><strong style={{ fontSize: '1.05rem', color: '#06b6d4' }}>{b.total}</strong></td>
-                <td><span className={`badge ${b.status === 'PAID' ? 'badge-success' : 'badge-warning'}`}>{b.status}</span></td>
+            {invoices.map(inv => (
+              <tr key={inv.id}>
+                <td><span className="badge badge-info">{inv.invNum}</span></td>
+                <td><strong>{inv.patient}</strong></td>
+                <td>{inv.items}</td>
+                <td><strong>{inv.total}</strong></td>
+                <td><span className={`badge ${inv.status === 'PAID' ? 'badge-success' : 'badge-warning'}`}>{inv.status}</span></td>
+                <td>{inv.method}</td>
                 <td>
-                  {b.status === 'GENERATED' && (
-                    <button className="btn btn-primary" style={{ padding: '4px 10px', fontSize: '0.75rem' }} onClick={() => handleSettle(b.id)}>
-                      Settle Payment (Kafka Event)
-                    </button>
+                  {inv.status === 'UNPAID' && (
+                    <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                      <select value={selectedPayMethod} onChange={e => setSelectedPayMethod(e.target.value)} style={{ padding: '2px 6px', fontSize: '0.75rem', width: 'auto', marginTop: 0 }}>
+                        <option value="UPI">UPI</option>
+                        <option value="CARD">Card</option>
+                        <option value="CASH">Cash</option>
+                      </select>
+                      <button className="btn btn-primary" style={{ padding: '2px 8px', fontSize: '0.75rem' }} onClick={() => handleSettlePayment(inv.id)}>
+                        Settle Payment
+                      </button>
+                    </div>
                   )}
                 </td>
               </tr>
